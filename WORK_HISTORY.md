@@ -220,7 +220,10 @@
 - [ ] **모바일 햄버거 메뉴**: 현재 모바일에서 nav 링크 숨겨짐
 - [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG
 - [ ] **Google Analytics / 전환 추적 설치**: 상담 폼 제출 이벤트 트래킹
-- [ ] **admin-upload 카테고리 기타 선택 후 실제 업로드 테스트** 확인
+- [x] **admin-upload 실제 업로드 테스트 및 버그 수정** ✅
+  - HWP 파일 업로드 차단 + PDF 변환 안내 메시지 추가
+  - 빈 응답(HTTP 200 empty body) 에러 메시지 개선
+  - n8n `Prepare Log` 노드 한글 컬럼명 깨짐(`?????`) → 정상 한글로 교체 → 구글시트 A열부터 정상 기록
 - [ ] **HWP 파일 지원**: n8n Docker 이미지에 LibreOffice 추가 → `Execute Command` 노드로 HWP→TXT 변환 후 Supabase 업로드 (현재는 HWP 업로드 시 PDF 변환 안내 메시지 표시 중)
 
 ---

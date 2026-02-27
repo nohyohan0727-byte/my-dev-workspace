@@ -23,6 +23,41 @@
 
 ---
 
+### [2026-02-27] register.html 유저 등록 페이지 추가 및 demo.html 연동
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 |
+| **상세 로그** | [work-logs/2026-02-27-demo-category-ui.md](work-logs/2026-02-27-demo-category-ui.md) |
+
+**요약:**
+- `register.html` 신규 생성: 이름/이메일 입력 → n8n `RAG-3-User-Registration` 호출 → API 키 자동 발급
+- 가입 성공 후 API 키 화면 표시 + 복사 버튼, "AI 체험하기" 버튼으로 demo.html 이동
+- `demo.html` URL 파라미터 수신 추가: `?api_key=xxx&name=xxx` 로 개인 키 자동 적용
+- n8n `RAG-3-User-Registration` webhook: `POST /rag-register` (Active), Google Sheets에 유저 저장
+- GitHub push → Netlify 자동 배포 완료
+
+---
+
+### [2026-02-27] demo.html 카테고리 UI 추가 및 Supabase 분석
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 |
+| **상세 로그** | [work-logs/2026-02-27-demo-category-ui.md](work-logs/2026-02-27-demo-category-ui.md) |
+
+**요약:**
+- Supabase 테이블 구조 확인: `documents_ks_certification`(2,560행), `documents_company_a/b/c`, `documents_business`, `documents_technical`, `documents_admin_upload`(52행)
+- n8n `RAG-Multi-Category-Chat` 분석: stub 상태 (더미 응답, 실제 RAG 미연결)
+- n8n `RAG-4-Secure-Chat` 분석: webhook path=`rag-chat`, 실제 OpenAI+Supabase RAG 동작
+- `demo.html` 전면 개편: 7개 카테고리 탭 추가 (KS인증/비즈니스/기술문서/업무관리/회사문서A-C)
+- fetch POST body에 `category` 필드 추가, 에러 처리 상세화
+- GitHub push → Netlify 자동 배포 완료
+
+---
+
 ### [2026-02-27] office-ai 소스 분석 및 배포 환경 구축
 
 | 항목 | 내용 |
@@ -59,10 +94,15 @@
 
 ## 다음 작업 예정
 
-- [ ] Netlify 토큰 `.env`에 추가 (Netlify 대시보드 → User Settings → Applications)
-- [ ] n8n 첫 번째 자동화 워크플로우 기획 및 구현
+- [x] Netlify 토큰 `.env`에 추가 ✅
+- [x] demo.html 카테고리 선택 UI 추가 ✅
+- [x] register.html 유저 등록 페이지 추가 ✅
+- [x] demo.html URL 파라미터 API 키 수신 ✅
+- [ ] **n8n RAG-4-Secure-Chat 실제 동작 확인**: register → demo 전체 플로우 테스트
+- [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG (카테고리별 테이블 라우팅)
 - [ ] office-ai 홈페이지에 n8n 솔루션 소개 섹션 추가
 - [ ] 모바일 햄버거 메뉴 추가 (현재 모바일에서 nav 숨겨짐)
+- [ ] `.env` SUPABASE_URL 업데이트: `https://mkmxhmoocqnkltjxdfbm.supabase.co`
 
 ---
 

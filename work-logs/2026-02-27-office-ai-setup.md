@@ -97,7 +97,7 @@ git push   # 자동으로 Netlify 배포 트리거
 
 ## 향후 작업 예정
 
-- [ ] Netlify 토큰 `.env`에 추가 (Netlify 대시보드 → User Settings → Applications)
+- [x] Netlify 토큰 `.env`에 추가 ✅ (완료 - API 연결 확인됨, 사이트 상태: ready)
 - [ ] n8n 자동화 솔루션 구축 → office-ai 홈페이지에 신규 섹션으로 소개
 - [ ] 모바일 햄버거 메뉴 추가 (현재 모바일에서 nav-links 숨겨짐)
 - [ ] 이벤트 만료 날짜 관리 (3월 이벤트 → 추후 업데이트 필요)

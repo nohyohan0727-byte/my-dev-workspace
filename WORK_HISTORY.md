@@ -23,6 +23,34 @@
 
 ---
 
+### [2026-02-27 오후] admin-upload.html 보안·기능 완성 및 n8n 연동
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 |
+| **상세 로그** | [work-logs/2026-02-27-admin-upload-complete.md](work-logs/2026-02-27-admin-upload-complete.md) |
+
+**요약:**
+- `admin-upload.html` 신규 생성: 관리자 문서 업로드 페이지 (https://office-ai.app/admin-upload.html)
+- **로그인 보안**: 하드코딩 비밀번호 제거 → n8n 서버사이드 키 검증 (`admin_JKN_7kX2pM9vR5tN3wQ8`)
+- **n8n `RAG-Webhook-Admin-Upload` 워크플로우 수정**:
+  - `Validate Admin Key` 노드 추가: admin_key 검증 + 원본 데이터 pass-through
+  - `Is Admin?` IF 노드 추가: 인증 성공/실패 분기
+  - `Return Admin 401` 노드 추가: 인증 실패 시 401 반환
+  - `Base64 to Binary` 수정: `_validate_only` 플래그로 파일 없이 키 검증 가능
+- **카테고리 필수 선택 + 기타 직접 입력**: 없는 카테고리 직접 생성 가능
+- **구글시트 연동 카테고리 드롭다운**: 신규 n8n 워크플로우 `RAG-Admin-Category-List` 생성
+  - 엔드포인트: `POST /webhook/admin-categories`
+  - 업로드 이력 시트에서 프로젝트 목록 읽어 드롭다운에 동적 표시
+  - 중복 카테고리 생성 방지
+- **API 키 URL 노출 보안 수정**: `register.html` → `demo.html` 이동 시 sessionStorage 사용 (URL 파라미터 제거)
+- **토큰 100개로 제한**: `RAG-3-User-Registration` 워크플로우 `tokens_total: 1000 → 100` 변경
+- **토큰 소진 안내**: 연락처 표시 (제이케이네트웍스 대표 노진광 010-3127-4528)
+- 모든 변경사항 GitHub push → Netlify 자동 배포 완료
+
+---
+
 ### [2026-02-27] RAG-4-Secure-Chat-FIXED 워크플로우 완성 및 검증
 
 | 항목 | 내용 |
@@ -122,12 +150,20 @@
 - [x] demo.html 카테고리 선택 UI 추가 ✅
 - [x] register.html 유저 등록 페이지 추가 ✅
 - [x] demo.html URL 파라미터 API 키 수신 ✅
-- [x] **n8n RAG-4-Secure-Chat 실제 동작 확인**: RAG-4-Secure-Chat-FIXED 완성 및 검증 ✅
-- [ ] **demo.html → RAG-4-Secure-Chat-FIXED 연결**: demo.html의 endpoint를 `/rag-category-chat`으로 업데이트
-- [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG (카테고리별 테이블 라우팅)
+- [x] Netlify 토큰 `.env`에 추가 ✅
+- [x] demo.html 카테고리 선택 UI 추가 ✅
+- [x] register.html 유저 등록 페이지 추가 ✅
+- [x] demo.html URL 파라미터 API 키 수신 → sessionStorage 보안 전환 ✅
+- [x] **n8n RAG-4-Secure-Chat-FIXED** 완성 및 검증 ✅
+- [x] **admin-upload.html** 관리자 문서 업로드 페이지 ✅
+- [x] **n8n RAG-Webhook-Admin-Upload** admin_key 인증 추가 ✅
+- [x] **n8n RAG-Admin-Category-List** 신규 워크플로우 (구글시트 카테고리 목록) ✅
+- [x] 신규 유저 토큰 100개로 제한 ✅
+- [x] 토큰 소진 시 연락처 안내 메시지 ✅
+- [ ] **demo.html 업로드 에러 수정 확인** (카테고리 기타 선택 후 실제 테스트 필요)
+- [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG
 - [ ] office-ai 홈페이지에 n8n 솔루션 소개 섹션 추가
 - [ ] 모바일 햄버거 메뉴 추가 (현재 모바일에서 nav 숨겨짐)
-- [ ] `.env` SUPABASE_URL 업데이트: `https://mkmxhmoocqnkltjxdfbm.supabase.co`
 
 ---
 

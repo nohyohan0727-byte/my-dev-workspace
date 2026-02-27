@@ -23,6 +23,23 @@
 
 ---
 
+### [2026-02-27] office-ai 소스 분석 및 배포 환경 구축
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 |
+| **상세 로그** | [work-logs/2026-02-27-office-ai-setup.md](work-logs/2026-02-27-office-ai-setup.md) |
+
+**요약:**
+- `office-ai` 저장소 `C:\dev\office-ai` 에 clone 완료
+- 소스 분석: 순수 정적 HTML+CSS, Netlify 자동배포 파이프라인 확인
+- `DEPLOY.md` 경로 수정 (`C:\work` → `C:\dev`)
+- `.env` / `.env.example` 에 Netlify 변수 추가 (Site ID, Build Hook URL)
+- 배포 흐름: git push → GitHub → Netlify Webhook → office-ai.app (30초)
+
+---
+
 ### [2026-02-27] 초기 환경 설정
 
 | 항목 | 내용 |
@@ -42,9 +59,10 @@
 
 ## 다음 작업 예정
 
-- [ ] `office-ai` 저장소 연결 및 구조 파악
+- [ ] Netlify 토큰 `.env`에 추가 (Netlify 대시보드 → User Settings → Applications)
 - [ ] n8n 첫 번째 자동화 워크플로우 기획 및 구현
-- [ ] office-ai 홈페이지에 솔루션 소개 섹션 추가
+- [ ] office-ai 홈페이지에 n8n 솔루션 소개 섹션 추가
+- [ ] 모바일 햄버거 메뉴 추가 (현재 모바일에서 nav 숨겨짐)
 
 ---
 

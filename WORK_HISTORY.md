@@ -23,6 +23,30 @@
 
 ---
 
+### [2026-02-27] RAG-4-Secure-Chat-FIXED 워크플로우 완성 및 검증
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 |
+| **상세 로그** | [work-logs/2026-02-27-rag4-secure-chat-fix.md](work-logs/2026-02-27-rag4-secure-chat-fix.md) |
+
+**요약:**
+- n8n `RAG-4-Secure-Chat` 분석: webhook path 불일치(`rag-chat` vs `rag-category-chat`) 문제 발견
+- `RAG-4-Secure-Chat-FIXED` 워크플로우 신규 구축:
+  - **Category Table Selector**: `category` 파라미터 → Supabase 테이블명 동적 매핑
+  - **Load User**: Google Sheets에서 `api_key`로 유저 조회
+  - **Validate Auth**: JS 코드로 api_key/status/expires_at/tokens 4단계 검증
+  - **Is Authorized?**: 인증 통과/실패 분기
+  - **KS AI Agent**: GPT-4.1 + Supabase RAG + SerpAPI 웹검색 + 대화 메모리
+  - **Deduct Token**: 응답 후 Google Sheets `tokens_used` +1 자동 업데이트
+  - **Return Response**: `success`, `response`, `tokens_remaining` JSON 반환
+- 실제 동작 검증 완료: `POST /webhook/rag-category-chat` → KS 인증 답변 + `tokens_remaining: 99` 확인
+- 워크플로우 JSON 저장: `projects/n8n-automations/RAG-4-Secure-Chat-FIXED.json`
+- 워크플로우 문서화: `projects/n8n-automations/RAG-4-Secure-Chat-FIXED.md`
+
+---
+
 ### [2026-02-27] register.html 유저 등록 페이지 추가 및 demo.html 연동
 
 | 항목 | 내용 |
@@ -98,7 +122,8 @@
 - [x] demo.html 카테고리 선택 UI 추가 ✅
 - [x] register.html 유저 등록 페이지 추가 ✅
 - [x] demo.html URL 파라미터 API 키 수신 ✅
-- [ ] **n8n RAG-4-Secure-Chat 실제 동작 확인**: register → demo 전체 플로우 테스트
+- [x] **n8n RAG-4-Secure-Chat 실제 동작 확인**: RAG-4-Secure-Chat-FIXED 완성 및 검증 ✅
+- [ ] **demo.html → RAG-4-Secure-Chat-FIXED 연결**: demo.html의 endpoint를 `/rag-category-chat`으로 업데이트
 - [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG (카테고리별 테이블 라우팅)
 - [ ] office-ai 홈페이지에 n8n 솔루션 소개 섹션 추가
 - [ ] 모바일 햄버거 메뉴 추가 (현재 모바일에서 nav 숨겨짐)

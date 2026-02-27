@@ -1,0 +1,518 @@
+﻿{
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "callerPolicy":  "workflowsFromSameOwner",
+                     "availableInMCP":  false
+                 },
+    "name":  "RAG-4-Secure-Chat-FIXED",
+    "connections":  {
+                        "Secure Chat Webhook":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Category Table Selector",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Load User":  {
+                                          "main":  [
+                                                       [
+                                                           {
+                                                               "node":  "Validate Auth",
+                                                               "type":  "main",
+                                                               "index":  0
+                                                           }
+                                                       ]
+                                                   ]
+                                      },
+                        "Validate Auth":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "Is Authorized?",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Is Authorized?":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "KS AI Agent",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ],
+                                                            [
+                                                                {
+                                                                    "node":  "Return Auth Error",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "KS AI Agent":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Deduct Token",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "OpenAI Chat Model":  {
+                                                  "ai_languageModel":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "KS AI Agent",
+                                                                                   "type":  "ai_languageModel",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                              },
+                        "Knowledge Base Retriever":  {
+                                                         "ai_tool":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "KS AI Agent",
+                                                                                 "type":  "ai_tool",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                     },
+                        "Retriever Embeddings":  {
+                                                     "ai_embedding":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Knowledge Base Retriever",
+                                                                                  "type":  "ai_embedding",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                 },
+                        "User Session Memory":  {
+                                                    "ai_memory":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "KS AI Agent",
+                                                                              "type":  "ai_memory",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                },
+                        "Deduct Token":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Return Response",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         },
+                        "Web Search":  {
+                                           "ai_tool":  [
+                                                           [
+                                                               {
+                                                                   "node":  "KS AI Agent",
+                                                                   "type":  "ai_tool",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                       },
+                        "Category Table Selector":  {
+                                                        "main":  [
+                                                                     {
+                                                                         "node":  "Load User",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                    },
+                        "Manual Test Trigger":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Test Data Generator",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Test Data Generator":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Category Table Selector",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
+                    },
+    "pinData":  {
+
+                },
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "rag-chat",
+                                         "responseMode":  "responseNode",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-chat-webhook",
+                      "name":  "Secure Chat Webhook",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -240,
+                                       592
+                                   ],
+                      "webhookId":  "rag-chat-hook"
+                  },
+                  {
+                      "parameters":  {
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1pth-I92vh4SmwILpAlKzeSeiwTrBNrdUcBLgTEJ8mas",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "gid=0",
+                                                           "mode":  "id"
+                                                       },
+                                         "filtersUI":  {
+                                                           "values":  [
+                                                                          {
+                                                                              "lookupColumn":  "api_key",
+                                                                              "lookupValue":  "={{ $json.body.api_key }}"
+                                                                          }
+                                                                      ]
+                                                       },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-load-user",
+                      "name":  "Load User",
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       208,
+                                       592
+                                   ],
+                      "alwaysOutputData":  true,
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "zQv6MGcZ8aQvFBOI",
+                                                                        "name":  "Google Sheets RAG"
+                                                                    }
+                                      },
+                      "continueOnFail":  true
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const items = $input.all();\nconst user = (items[0] \u0026\u0026 items[0].json) ? items[0].json : {};\n\n// 1. API ??????? ?????????????????????????? ??????????????\nif (!user.api_key || !user.user_id) {\n  return [{ json: { authorized: false, error: \u0027Invalid API key.\u0027, code: 401 } }];\n}\n\n// 2. ???????????? ?????????????? ?????????????? ??????????????\nif (user.status !== \u0027active\u0027) {\n  return [{ json: { authorized: false, error: \u0027Account is inactive. Please contact administrator.\u0027, code: 403 } }];\n}\n\n// 3. ?????????????? ??????????????\nvar today = new Date().toISOString().split(\u0027T\u0027)[0];\nif (user.expires_at \u0026\u0026 user.expires_at \u003c today) {\n  return [{ json: { authorized: false, error: \u0027API key expired on \u0027 + user.expires_at + \u0027. Please renew.\u0027, code: 403 } }];\n}\n\n// 4. ?????????????? ?????????????? ??????????????\nvar tokensTotal = parseInt(user.tokens_total) || 0;\nvar tokensUsed = parseInt(user.tokens_used) || 0;\nvar tokensRemaining = tokensTotal - tokensUsed;\n\nif (tokensRemaining \u003c= 0) {\n  return [{ json: { authorized: false, error: \u0027No tokens remaining (\u0027 + tokensTotal + \u0027 total used). Please contact administrator.\u0027, code: 403 } }];\n}\n\nreturn [{ json: {\n  authorized: true,\n  user_id: user.user_id,\n  name: user.name,\n  email: user.email,\n  api_key: user.api_key,\n  tokens_used: tokensUsed,\n  tokens_total: tokensTotal,\n  tokens_remaining: tokensRemaining\n} }];"
+                                     },
+                      "id":  "node-validate-auth",
+                      "name":  "Validate Auth",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       432,
+                                       592
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  1
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-authorized",
+                                                                                   "leftValue":  "={{ $json.authorized }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-is-authorized",
+                      "name":  "Is Authorized?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       656,
+                                       592
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={{ JSON.stringify({ success: false, message: $json.error }) }}",
+                                         "options":  {
+                                                         "responseCode":  "={{ $json.code || 403 }}"
+                                                     }
+                                     },
+                      "id":  "node-return-auth-error",
+                      "name":  "Return Auth Error",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1152,
+                                       784
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "={{ $(\u0027Secure Chat Webhook\u0027).first().json.body.message }}",
+                                         "options":  {
+                                                         "systemMessage":  "??? KS?? ?? ??? ?? ????? ??? KS?? ??????.\n??????, ??????? ? ?? ?? ??? ????, ????, ????, ????, ???, ???? ? KS?? ? ??? ?? ?? ?? ??? ???? ????.\n\n[?? ?? - ??? ? ??? ?? ?]\n\n1??: ?? ?? ?? ??\n- ??? KS?? ?? ??? ?? ?? ?????.\n- ??? ??? ??? ?? ?? ???? ????, ???? ??? ?????.\n\n2??: ?? ? ?? (?? ?? ?? - ?? ?? ?? ??)\n- ?? ??? ??? ??? ???? ??, ????? ??? ?? ?? ?? ?? web_search ?? ???? ?? ??? ?????.\n- \"?? ?? ??? ?????...\" ?? ?? ??? ??? ?? ???? ????.\n- ?? ?? ??: ???????(KATS) \u003e ??????(KSA) \u003e ??? ?? ?? \u003e ?? ?? ? ??\n- ?? ?? ?? ?? ? ??(???, URL)? ??? ?????.\n\n3??: ?? ?? (????? ??? ?)\n- ?? ?? ??? ??? ??, KS?? ??? ?? ??? ?? ??? ???? ???? [??? ?? ??]?? ?????.\n\n[?? ??]\n- ??: ??? ???? ?? (?? ?? ??)\n- ??: KS?? ?? ?? ?? (????, ????, ????, ????, ???, ???? ?)\n- ??: ?? ?? -\u003e ?? ?? ? ?? -\u003e ?? ?? ?\n- ??: ?? ??? ????, ?? ??? ???? ????\n\n[?? ?? - ?? ?? ??? ?? ??]\n[?? ??]\n- ????: ???\n- ????: ??? - URL ?? ???\n- ????: KS?? ??? ?? ??\n\n[?? ??]\nKS?? ??, ??, ??, ??, ??, ????, ???? ??, ?? ??, ???? ??,\n??????, ???????, ?? ??, KS?? ??, ??? ?? ? ??, ????(CB) ?? ??\n\n[?? ??]\nKS??? ??? ???? ??? ?? ??? KS?? ???? ?????."
+                                                     }
+                                     },
+                      "id":  "node-ai-agent",
+                      "name":  "KS AI Agent",
+                      "type":  "@n8n/n8n-nodes-langchain.agent",
+                      "typeVersion":  1.7,
+                      "position":  [
+                                       1040,
+                                       176
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "model":  "gpt-4.1",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-chat-model",
+                      "name":  "OpenAI Chat Model",
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                      "typeVersion":  1,
+                      "position":  [
+                                       880,
+                                       400
+                                   ],
+                      "credentials":  {
+                                          "openAiApi":  {
+                                                            "id":  "3Ce5sE9uZ6LPb2sk",
+                                                            "name":  "OpenAi account 0206"
+                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "retrieve-as-tool",
+                                         "toolName":  "document_search",
+                                         "toolDescription":  "Retrieve internal company documents related to policies, rules, or procedures based on semantic similarity to the question.",
+                                         "tableName":  {
+                                                           "__rl":  true,
+                                                           "value":  "={{ $(\"Category Table Selector\").first().json.selectedTable }}",
+                                                           "mode":  ""
+                                                       },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-retriever",
+                      "name":  "Knowledge Base Retriever",
+                      "type":  "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1136,
+                                       400
+                                   ],
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "J8OBOHbtYe75eDUh",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+                                                         "dimensions":  1536
+                                                     }
+                                     },
+                      "id":  "node-retriever-embeddings",
+                      "name":  "Retriever Embeddings",
+                      "type":  "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1216,
+                                       608
+                                   ],
+                      "credentials":  {
+                                          "openAiApi":  {
+                                                            "id":  "3Ce5sE9uZ6LPb2sk",
+                                                            "name":  "OpenAi account 0206"
+                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "sessionIdType":  "customKey",
+                                         "sessionKey":  "={{ $(\u0027Validate Auth\u0027).first().json.user_id }}"
+                                     },
+                      "id":  "node-memory",
+                      "name":  "User Session Memory",
+                      "type":  "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       1008,
+                                       400
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "update",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1ObjurBWNTlMT7jHQns8VpVO82IkOcG6lwSGDBdCnmWU",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "gid=0",
+                                                           "mode":  "id"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "api_key":  "={{ $(\u0027Secure Chat Webhook\u0027).first().json.body.api_key }}",
+                                                                       "tokens_used":  "={{ $(\u0027Validate Auth\u0027).first().json.tokens_used + 1 }}"
+                                                                   },
+                                                         "matchingColumns":  [
+                                                                                 "api_key"
+                                                                             ],
+                                                         "schema":  [
+
+                                                                    ]
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "node-deduct-token",
+                      "name":  "Deduct Token",
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       1632,
+                                       384
+                                   ],
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "zQv6MGcZ8aQvFBOI",
+                                                                        "name":  "Google Sheets RAG"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={{ JSON.stringify({ success: true, response: $(\u0027KS AI Agent\u0027).first().json.output, tokens_remaining: $(\u0027Validate Auth\u0027).first().json.tokens_remaining - 1 }) }}",
+                                         "options":  {
+                                                         "responseCode":  200
+                                                     }
+                                     },
+                      "id":  "node-return-response",
+                      "name":  "Return Response",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1856,
+                                       384
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "toolDescription":  "KS?? ?? ?? ?? ??? Google?? ?????. ?? ??? ??? ??? ?? ??? ??? ? ?? ?????. searchQuery? ??? KS?? ?? ???? ?????. (?: \u0027KS?? ?? ??\u0027, \u0027KS C 8567 ??\u0027, \u0027?????? ?? 2024\u0027)",
+                                         "url":  "https://serpapi.com/search?api_key=692cce723bed17dda792948d45436d931b2d427745f0fd79619e150c7ec551e0\u0026q={{searchQuery}}\u0026hl=ko\u0026gl=kr\u0026num=5\u0026engine=google",
+                                         "optimizeResponse":  true
+                                     },
+                      "id":  "tool-web-search",
+                      "name":  "Web Search",
+                      "type":  "@n8n/n8n-nodes-langchain.toolHttpRequest",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1424,
+                                       400
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// ????? ??? ??\nconst CATEGORY_TABLES = {\n    \u0027ks_cert\u0027: \u0027documents_ks_cert\u0027,\n    \u0027business\u0027: \u0027documents_business\u0027, \n    \u0027technical\u0027: \u0027documents_technical\u0027,\n    \u0027admin_general\u0027: \u0027documents_admin_upload\u0027\n};\n\nconst input = $input.first().json;\nconst category = input.category || \u0027ks_cert\u0027;\nconst tableName = CATEGORY_TABLES[category] || \u0027documents_ks_cert\u0027;\n\nconsole.log(\u0027??? ????:\u0027, category);\nconsole.log(\u0027??? ???:\u0027, tableName);\n\nreturn [{\n    json: {\n        ...input,\n        selectedTable: tableName\n    }\n}];"
+                                     },
+                      "id":  "category-selector-1772177834137",
+                      "name":  "Category Table Selector",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -16,
+                                       592
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "id":  "manual-trigger-test",
+                      "name":  "Manual Test Trigger",
+                      "type":  "n8n-nodes-base.manualTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       112,
+                                       112
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "\n// ???? ??? ??\nconst testCases = [\n    {\n        api_key: \"rag_EwgW0bY0c1o4M2TN42mC4eqJFCYAIedZ\",\n        session_id: \"manual-test-ks\",\n        message: \"KS ??? ??????\",\n        category: \"ks_cert\",\n        table_name: \"documents_ks_cert\"\n    },\n    {\n        api_key: \"rag_EwgW0bY0c1o4M2TN42mC4eqJFCYAIedZ\", \n        session_id: \"manual-test-business\",\n        message: \"????? ?? ??? ?????\",\n        category: \"business\",\n        table_name: \"documents_business\"\n    },\n    {\n        api_key: \"rag_EwgW0bY0c1o4M2TN42mC4eqJFCYAIedZ\",\n        session_id: \"manual-test-technical\", \n        message: \"API ?? ?? ???? ?????\",\n        category: \"technical\",\n        table_name: \"documents_technical\"\n    },\n    {\n        api_key: \"rag_EwgW0bY0c1o4M2TN42mC4eqJFCYAIedZ\",\n        session_id: \"manual-test-admin\",\n        message: \"?? ??? ?? ????\", \n        category: \"admin_general\",\n        table_name: \"documents_admin_upload\"\n    }\n];\n\n// ? ?? ??? ??? ?? (??? ???? ?? ??)\nconst selectedTest = testCases[0]; // 0=KS, 1=????, 2=??, 3=??\n\nconsole.log(\u0027?? ??? ??? ??:\u0027, selectedTest);\nconsole.log(\u0027?? ????:\u0027, selectedTest.category);\nconsole.log(\u0027?? ???:\u0027, selectedTest.table_name);\n\nreturn [{ json: selectedTest }];\n"
+                                     },
+                      "id":  "test-data-generator",
+                      "name":  "Test Data Generator",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       304,
+                                       112
+                                   ]
+                  }
+              ]
+}

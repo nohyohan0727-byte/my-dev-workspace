@@ -108,7 +108,19 @@ Secure Chat Webhook
 
 ---
 
-## 현재 상태 (2026-02-28 테스트 중)
-- SQL 함수 `#variable_conflict` 패치 적용 후 테스트 중
-- 소스 카드 표시 여부 확인 필요
-- 내부 문서 우선 검색 동작 확인 필요
+## 최종 완료 상태 (2026-02-28) ✅
+
+### 추가 버그 수정 (오후)
+| 버그 | 원인 | 해결 |
+|------|------|------|
+| `getFileIcon is not defined` (진짜 연결 오류 원인) | `renderSources()`에서 미정의 함수 호출 → 소스 있으면 항상 crash | `getFileIcon()` 추가 (xlsx→📊, docx→📝, pdf→📕, hwp→📝 등) |
+| 업무관리 카테고리 검색 오작동 | demo.html `admin_upload` ↔ n8n `admin_general` 매핑 불일치 | n8n Category Table Selector에 `admin_upload` 추가 |
+
+### demo.html PC 레이아웃 개선
+- `chat-wrapper` (max-width: 960px, 가운데 정렬) 추가
+- catch 블록 에러 종류 구분 + `console.error` 추가
+
+### Supabase 테스트 데이터 정리
+- `documents_ks_certification`: 2,630 rows → 0 (TRUNCATE)
+- `documents_admin_upload`: 286 rows → 0 (TRUNCATE)
+- 정식 문서 새로 업로드 대기 중

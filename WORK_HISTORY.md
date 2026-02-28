@@ -23,12 +23,12 @@
 
 ---
 
-### [2026-02-28] RAG 채팅 소스 카드 기능 구현 + 워크플로우 범용화
+### [2026-02-28] RAG 채팅 소스 카드 기능 구현 + 워크플로우 범용화 + 버그 전수 수정
 
 | 항목 | 내용 |
 |------|------|
 | **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
-| **상태** | 🔧 진행 중 (테스트 중) |
+| **상태** | ✅ 완료 |
 | **상세 로그** | [work-logs/2026-02-28-rag-source-card.md](work-logs/2026-02-28-rag-source-card.md) |
 
 **요약:**
@@ -53,41 +53,42 @@
 **RAG AI Agent 범용화 (KS 하드코딩 제거):**
 - `KS AI Agent` → `RAG AI Agent` 노드명 변경
 - `Build System Prompt` 노드 추가: 카테고리별 동적 시스템 프롬프트 생성
-  - KS인증 → KS인증심사원 역할
-  - 비즈니스 → 비즈니스 전문가 역할
-  - 기술문서 → 기술 전문가 역할
-  - 업무관리 → 행정 운영 전문가 역할
+  - KS인증 → KS인증심사원 역할 / 비즈니스 → 비즈니스 전문가 / 기술문서 → 기술전문가 / 업무관리 → 행정운영전문가
 - **내부 문서 우선 검색 강제**: STEP1 document_search 필수 → STEP2 web_search 보조 로직 프롬프트에 명시
-- Web Search 툴 설명 범용화 (KS 특화 제거)
 - `Return Response`: `sources` 배열 포함하여 반환
 
 #### 4. Supabase SQL 함수 정비
-- `match_documents_generic` 함수 생성 (기존): 범용 동적 테이블 벡터 검색
-- 테이블별 `match_documents_*` 함수 7개 생성:
-  - `match_documents_ks_certification` / `match_documents_admin_upload`
-  - `match_documents_business` / `match_documents_technical`
-  - `match_documents_company_a/b/c`
-- `#variable_conflict use_column` 적용으로 컬럼 참조 충돌 해결
-- Knowledge Base Retriever `queryName`을 동적 표현식으로 변경
+- 테이블별 `match_documents_*` 함수 7개 생성 (ks_certification, admin_upload, business, technical, company_a/b/c)
+- `#variable_conflict use_column` + 테이블 별칭 `t.` 적용 → `id` 컬럼 ambiguous 오류 해결
+- Knowledge Base Retriever `queryName` 동적 표현식 변경
 
-#### 5. 기존 문서 metadata 소급 적용
-- `documents_ks_certification`: 511개 파일명 행에 `source_filename` 추가
-- `documents_admin_upload`: 10개 파일에 `source_filename` 추가
-- Node.js 스크립트로 자동 처리: `C:/dev/backfill_ks_metadata.js`, `C:/dev/backfill_all_tables.js`
+#### 5. 버그 전수 수정 (오전 → 오후)
+| 버그 | 원인 | 해결 |
+|------|------|------|
+| "연결 오류" (1차) | Search Source Docs 빈 결과 → 이후 노드 미실행 | `alwaysOutputData: true` |
+| "연결 오류" (2차) | Retriever Embeddings `dimensions: 1536` 미지원 | 옵션 제거 |
+| "연결 오류" (3차) | `match_documents` SQL 함수 Supabase 미존재 | 함수 7개 신규 생성 |
+| "연결 오류" (4차) | SQL `id` 컬럼 ambiguous | `#variable_conflict use_column` |
+| **"오류: getFileIcon is not defined" (진짜 원인)** | `renderSources()`에서 호출하는 `getFileIcon` 함수 미정의 → 소스 있으면 항상 crash | **함수 추가 (파일 확장자별 이모지 반환)** |
+| 업무관리 카테고리 오작동 | demo.html `admin_upload` 전송 ↔ n8n `admin_general` 매핑 불일치 | n8n에 `admin_upload` 매핑 추가 |
+| 내부 테이블명 노출 | admin-upload.html 성공 메시지에 `documents_admin_upload` 표시 | 카테고리명으로 변경 |
+| KS 문서 못 찾음 | Category Table Selector가 `documents_ks_cert`(없는 테이블) 조회 | `documents_ks_certification`으로 수정 |
 
-#### 6. 버그 수정
-- `admin-upload.html` 업로드 성공 메시지: `테이블: documents_admin_upload` → `카테고리: 업무관리` (내부 테이블명 노출 제거)
-- Category Table Selector: `ks_certification` → `documents_ks_certification` 테이블명 오타 수정 (기존 `documents_ks_cert`로 잘못 연결)
-- `Search Source Docs` 노드: `alwaysOutputData: true` 추가 (빈 결과 시 이후 노드 실행 멈춤 방지)
-- `Retriever Embeddings`: `dimensions: 1536` 옵션 제거 (text-embedding-ada-002 미지원 파라미터)
-- match_* SQL 함수: 테이블 별칭(`t.`) 추가로 `id` 컬럼 ambiguous 오류 해결
+#### 6. demo.html PC 레이아웃 개선
+- `chat-wrapper` (max-width: 960px, 가운데 정렬) 추가 → PC 화면에서 채팅창 좁게/가운데
+- catch 블록 에러 상세화: 네트워크 오류 vs JS 오류 구분 + `console.error` 추가
+
+#### 7. Supabase 테스트 데이터 전체 삭제
+- `documents_ks_certification` 2,630 rows → 0 (TRUNCATE)
+- `documents_admin_upload` 286 rows → 0 (TRUNCATE)
+- 실제 정식 문서를 새로 업로드할 준비 완료
 
 #### 주요 파일 변경
 | 파일 | 변경 내용 |
 |------|-----------|
-| `office-ai/demo.html` | `downloadSourceFile()` drive_url 직접 다운로드 지원 |
+| `office-ai/demo.html` | `getFileIcon()` 추가, PC 레이아웃 개선, 에러 로깅 개선 |
 | `office-ai/admin-upload.html` | 업로드 성공 메시지 카테고리명 표시 |
-| n8n 워크플로우 `DUhC36eo7SJNw2Wc` | 소스 파이프라인 + RAG AI Agent 범용화 |
+| n8n 워크플로우 `DUhC36eo7SJNw2Wc` | 소스 파이프라인 + RAG AI Agent 범용화 + `admin_upload` 매핑 추가 |
 | n8n 워크플로우 `BnNM5zFuBsqrSyeM` | Tag Metadata 노드 추가, 연결 순서 수정 |
 | Supabase SQL | match_documents_* 함수 7개 신규 생성 |
 
@@ -285,16 +286,13 @@
 - [x] 이벤트 배너/플로팅 버튼 index2 유도
 
 ### 🔲 다음 작업 후보
+- [ ] **정식 문서 업로드**: Supabase 테이블 비운 상태 → admin-upload.html로 실제 KS 인증·업무 문서 업로드
+- [ ] **소스 카드 Drive URL 연결**: 문서 업로드 시 Google Drive URL이 metadata에 저장되도록 검증, 소스 카드 클릭 다운로드 동작 확인
 - [ ] **index2 vs index3 A/B 테스트**: 어느 버전 전환율이 높은지 비교
 - [ ] **실제 고객 후기로 교체**: 현재 가상 후기 → 실제 도입 사례로 변경
 - [ ] **모바일 햄버거 메뉴**: 현재 모바일에서 nav 링크 숨겨짐
-- [ ] **n8n RAG-Multi-Category-Chat 실제 연결**: 더미→진짜 OpenAI+Supabase RAG
 - [ ] **Google Analytics / 전환 추적 설치**: 상담 폼 제출 이벤트 트래킹
-- [x] **admin-upload 실제 업로드 테스트 및 버그 수정** ✅
-  - HWP 파일 업로드 차단 + PDF 변환 안내 메시지 추가
-  - 빈 응답(HTTP 200 empty body) 에러 메시지 개선
-  - n8n `Prepare Log` 노드 한글 컬럼명 깨짐(`?????`) → 정상 한글로 교체 → 구글시트 A열부터 정상 기록
-- [ ] **HWP 파일 지원**: n8n Docker 이미지에 LibreOffice 추가 → `Execute Command` 노드로 HWP→TXT 변환 후 Supabase 업로드 (현재는 HWP 업로드 시 PDF 변환 안내 메시지 표시 중)
+- [ ] **HWP 파일 지원**: n8n에 LibreOffice 추가 → HWP→TXT 변환 후 Supabase 업로드
 
 ---
 

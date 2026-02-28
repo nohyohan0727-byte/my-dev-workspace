@@ -23,6 +23,76 @@
 
 ---
 
+### [2026-02-28] RAG 채팅 소스 카드 기능 구현 + 워크플로우 범용화
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | 🔧 진행 중 (테스트 중) |
+| **상세 로그** | [work-logs/2026-02-28-rag-source-card.md](work-logs/2026-02-28-rag-source-card.md) |
+
+**요약:**
+
+#### 1. 내부 문서 출처 카드 기능 구현
+- **목표**: 채팅 답변에 참조된 내부 문서를 파일 카드로 표시 + 클릭 시 Google Drive 다운로드
+- **설계**: AI 자기보고 방식(할루시네이션 위험) 대신 Supabase 벡터 검색 metadata에서 직접 추출
+- demo.html `downloadSourceFile()` 수정: `drive_url` 있으면 webhook 없이 `window.open()` 직접 호출
+- 구현 가이드: `projects/n8n-automations/implementation-guide-source-download.md`
+
+#### 2. n8n 업로드 워크플로우(BnNM5zFuBsqrSyeM) 수정
+- `Tag Metadata` 노드 추가: 업로드 후 Supabase에 `source_filename`, `source_file_id`, `source_drive_url` metadata 소급 저장
+- 연결 순서 수정: Base64→Binary → Upload to Drive → Supabase Vector Store (순차 실행)
+- 문서 업로드 시 Google Drive URL이 자동으로 Supabase metadata에 기록됨
+
+#### 3. n8n 채팅 워크플로우(DUhC36eo7SJNw2Wc) 대규모 개편
+**신규 노드 3개 추가 (소스 검색 파이프라인):**
+- `Get Query Embedding` (HTTP Request): 질문을 OpenAI embedding으로 변환
+- `Search Source Docs` (HTTP Request): Supabase RPC `match_documents_generic`으로 유사 문서 검색
+- `Extract Sources` (Code): 검색 결과에서 `source_filename`, `source_drive_url` 추출 → `sources[]` 배열 생성
+
+**RAG AI Agent 범용화 (KS 하드코딩 제거):**
+- `KS AI Agent` → `RAG AI Agent` 노드명 변경
+- `Build System Prompt` 노드 추가: 카테고리별 동적 시스템 프롬프트 생성
+  - KS인증 → KS인증심사원 역할
+  - 비즈니스 → 비즈니스 전문가 역할
+  - 기술문서 → 기술 전문가 역할
+  - 업무관리 → 행정 운영 전문가 역할
+- **내부 문서 우선 검색 강제**: STEP1 document_search 필수 → STEP2 web_search 보조 로직 프롬프트에 명시
+- Web Search 툴 설명 범용화 (KS 특화 제거)
+- `Return Response`: `sources` 배열 포함하여 반환
+
+#### 4. Supabase SQL 함수 정비
+- `match_documents_generic` 함수 생성 (기존): 범용 동적 테이블 벡터 검색
+- 테이블별 `match_documents_*` 함수 7개 생성:
+  - `match_documents_ks_certification` / `match_documents_admin_upload`
+  - `match_documents_business` / `match_documents_technical`
+  - `match_documents_company_a/b/c`
+- `#variable_conflict use_column` 적용으로 컬럼 참조 충돌 해결
+- Knowledge Base Retriever `queryName`을 동적 표현식으로 변경
+
+#### 5. 기존 문서 metadata 소급 적용
+- `documents_ks_certification`: 511개 파일명 행에 `source_filename` 추가
+- `documents_admin_upload`: 10개 파일에 `source_filename` 추가
+- Node.js 스크립트로 자동 처리: `C:/dev/backfill_ks_metadata.js`, `C:/dev/backfill_all_tables.js`
+
+#### 6. 버그 수정
+- `admin-upload.html` 업로드 성공 메시지: `테이블: documents_admin_upload` → `카테고리: 업무관리` (내부 테이블명 노출 제거)
+- Category Table Selector: `ks_certification` → `documents_ks_certification` 테이블명 오타 수정 (기존 `documents_ks_cert`로 잘못 연결)
+- `Search Source Docs` 노드: `alwaysOutputData: true` 추가 (빈 결과 시 이후 노드 실행 멈춤 방지)
+- `Retriever Embeddings`: `dimensions: 1536` 옵션 제거 (text-embedding-ada-002 미지원 파라미터)
+- match_* SQL 함수: 테이블 별칭(`t.`) 추가로 `id` 컬럼 ambiguous 오류 해결
+
+#### 주요 파일 변경
+| 파일 | 변경 내용 |
+|------|-----------|
+| `office-ai/demo.html` | `downloadSourceFile()` drive_url 직접 다운로드 지원 |
+| `office-ai/admin-upload.html` | 업로드 성공 메시지 카테고리명 표시 |
+| n8n 워크플로우 `DUhC36eo7SJNw2Wc` | 소스 파이프라인 + RAG AI Agent 범용화 |
+| n8n 워크플로우 `BnNM5zFuBsqrSyeM` | Tag Metadata 노드 추가, 연결 순서 수정 |
+| Supabase SQL | match_documents_* 함수 7개 신규 생성 |
+
+---
+
 ### [2026-02-27 저녁] 홈페이지 UX/카피 전면 개편 + 랜딩페이지 신규 제작
 
 | 항목 | 내용 |

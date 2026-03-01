@@ -46,9 +46,17 @@
 | `POST /trustrag/upload` | 파일 업로드 → Supabase 벡터 저장 | ✅ JSON 작성 완료 |
 | `POST /trustrag/admin` | 관리 액션 (10개) | ✅ JSON 작성 완료 |
 
-**필요한 Supabase 신규 테이블 (다중 테넌트):**
-- `tr_companies`, `tr_users`, `tr_categories`, `tr_user_permissions`, `tr_audit_logs`
-- 카테고리별 문서 테이블: `tr_documents_{company_slug}_{cat_slug}`
+**Supabase DB 실행 완료 (ryzkcdvywxblsbyujtfv):**
+- `tr_companies`, `tr_users`, `tr_categories`, `tr_user_permissions`, `tr_audit_logs` ✅ 생성
+- RPC: `tr_validate_key()`, `tr_deduct_token()`, `tr_create_doc_table()` ✅ 생성
+- 초기 데이터: JK Networks 회사 + 슈퍼어드민 계정 생성 (API 키 변경 필요)
+- 기존 테이블 카테고리 등록: ISO인증(tr_jknetworks_iso_cert), KS인증(tr_jknetworks_ks_cert)
+- validate-key 동작 확인: success: true, categories 2개 반환 ✅
+
+**다음 단계:**
+1. 슈퍼어드민 API 키 변경: `UPDATE tr_users SET api_key='trust_실제키' WHERE role='super_admin'`
+2. n8n 워크플로우 4개 import (02~05 JSON 파일)
+3. `/trustrag/admin.html` 접속 → 카테고리/회원 관리
 
 **admin action 목록:**
 `list_users`, `create_user`, `add_tokens`, `list_companies`, `create_company`, `create_category`, `get_user_permissions`, `grant_permission`, `revoke_permission`, `get_audit_logs`

@@ -1,0 +1,612 @@
+{
+  "name": "TrustRAG-2-Admin",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trustrag/admin",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-admin",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "webhookId": "trustrag-admin"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tr_validate_key('{{ $json.body.api_key }}') AS result",
+        "options": {}
+      },
+      "id": "auth-check",
+      "name": "인증 확인",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [420, 400],
+      "credentials": {
+        "postgres": { "name": "Supabase (Postgres)" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "auth-ok",
+              "leftValue": "={{ $json.result.success }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "is-auth",
+      "name": "인증 OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [640, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": false, \"message\": \"{{ $('인증 확인').item.json.result.message || '인증 실패' }}\" }",
+        "options": { "responseCode": 401 }
+      },
+      "id": "return-401",
+      "name": "401 Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [640, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = $('인증 확인').item.json.result;\nconst action = $('Webhook').item.json.body.action;\nconst data = $('Webhook').item.json.body.data || {};\nconst role = auth.role;\nconst companyId = auth.company_id;\nconst userId = auth.id;\n\nconst levels = { super_admin: 4, company_admin: 3, group_admin: 2, user: 1 };\nconst userLevel = levels[role] || 0;\n\nreturn [{ json: { action, data, role, companyId, userId, userLevel, auth } }];"
+      },
+      "id": "parse-action",
+      "name": "액션 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "list_companies",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-list-companies",
+      "name": "list_companies?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "create_company",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-create-company",
+      "name": "create_company?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "list_users",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-list-users",
+      "name": "list_users?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "create_user",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-create-user",
+      "name": "create_user?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "add_tokens",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-add-tokens",
+      "name": "add_tokens?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 660]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "create_category",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-create-cat",
+      "name": "create_category?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "get_user_permissions",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "route-get-perms",
+      "name": "get_permissions?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 940]
+    },
+
+    /* ── list_companies ── */
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, slug, plan, is_active, created_at FROM tr_companies ORDER BY created_at DESC",
+        "options": {}
+      },
+      "id": "sql-list-companies",
+      "name": "SQL: list_companies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1320, 60],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nreturn [{ json: { success: true, result: rows } }];"
+      },
+      "id": "fmt-list-companies",
+      "name": "Format: list_companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 60]
+    },
+
+    /* ── create_company ── */
+    {
+      "parameters": {
+        "jsCode": "const d = $('액션 파싱').item.json;\nif (d.userLevel < 4) return [{ json: { success: false, message: '슈퍼 관리자 권한 필요' } }];\nconst { name, slug, plan } = d.data;\nif (!name || !slug) return [{ json: { success: false, message: '회사명과 슬러그 필수' } }];\nif (!/^[a-z0-9][a-z0-9\\-]*[a-z0-9]$/.test(slug) && slug.length > 1) return [{ json: { success: false, message: '슬러그 형식 오류 (소문자·숫자·하이픈)' } }];\nreturn [{ json: { name, slug, plan: plan || 'starter', proceed: true } }];"
+      },
+      "id": "validate-company",
+      "name": "Validate: create_company",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tr_companies (name, slug, plan) VALUES ('{{ $json.name }}', '{{ $json.slug }}', '{{ $json.plan }}') RETURNING id, name, slug, plan, created_at",
+        "options": {}
+      },
+      "id": "sql-create-company",
+      "name": "SQL: create_company",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1540, 200],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nreturn [{ json: { success: true, result: row } }];"
+      },
+      "id": "fmt-create-company",
+      "name": "Format: create_company",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 200]
+    },
+
+    /* ── list_users ── */
+    {
+      "parameters": {
+        "jsCode": "const d = $('액션 파싱').item.json;\nconst companyId = d.data.company_id || d.companyId;\nreturn [{ json: { companyId, role: d.role } }];"
+      },
+      "id": "prep-list-users",
+      "name": "Prep: list_users",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id, u.email, u.name, u.role, u.tokens_remaining, u.tokens_used, u.is_active, u.created_at FROM tr_users u WHERE u.company_id = '{{ $json.companyId }}'::uuid ORDER BY u.created_at DESC",
+        "options": {}
+      },
+      "id": "sql-list-users",
+      "name": "SQL: list_users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1540, 380],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nreturn [{ json: { success: true, result: rows } }];"
+      },
+      "id": "fmt-list-users",
+      "name": "Format: list_users",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 380]
+    },
+
+    /* ── create_user ── */
+    {
+      "parameters": {
+        "jsCode": "const d = $('액션 파싱').item.json;\nconst { email, name, role, tokens_remaining, company_id } = d.data;\nconst companyId = company_id || d.companyId;\nif (!email || !name) return [{ json: { success: false, message: '이메일과 이름 필수' } }];\n// API 키 생성\nconst apiKey = 'trust_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2,'0')).join('');\nreturn [{ json: { email: email.trim(), name: name.trim(), role: role || 'user', tokens: tokens_remaining || 1000, companyId, apiKey } }];"
+      },
+      "id": "prep-create-user",
+      "name": "Prep: create_user",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 520]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tr_users (company_id, email, name, role, api_key, tokens_remaining) VALUES ('{{ $json.companyId }}'::uuid, '{{ $json.email }}', '{{ $json.name }}', '{{ $json.role }}', '{{ $json.apiKey }}', {{ $json.tokens }}) ON CONFLICT (api_key) DO NOTHING RETURNING id, email, name, role, api_key, tokens_remaining, created_at",
+        "options": {}
+      },
+      "id": "sql-create-user",
+      "name": "SQL: create_user",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1540, 520],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nreturn [{ json: { success: true, result: row, api_key: row.api_key } }];"
+      },
+      "id": "fmt-create-user",
+      "name": "Format: create_user",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 520]
+    },
+
+    /* ── add_tokens ── */
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE tr_users SET tokens_remaining = tokens_remaining + {{ $('액션 파싱').item.json.data.amount }} WHERE id = '{{ $('액션 파싱').item.json.data.user_id }}'::uuid RETURNING id, email, name, tokens_remaining",
+        "options": {}
+      },
+      "id": "sql-add-tokens",
+      "name": "SQL: add_tokens",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1320, 660],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nreturn [{ json: { success: !!row, result: row } }];"
+      },
+      "id": "fmt-add-tokens",
+      "name": "Format: add_tokens",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 660]
+    },
+
+    /* ── create_category ── */
+    {
+      "parameters": {
+        "jsCode": "const d = $('액션 파싱').item.json;\nconst { name, description } = d.data;\nif (!name) return [{ json: { success: false, message: '카테고리 이름 필수' } }];\n// table_name 생성: tr_docs_{companySlug}_{catSlug}\nconst slug = name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');\nconst tableName = 'tr_docs_' + slug + '_' + Date.now().toString(36);\nreturn [{ json: { name: name.trim(), description: description || '', tableName, companyId: d.companyId } }];"
+      },
+      "id": "prep-create-cat",
+      "name": "Prep: create_category",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 800]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO tr_categories (company_id, name, table_name, description) VALUES ('{{ $json.companyId }}'::uuid, '{{ $json.name }}', '{{ $json.tableName }}', '{{ $json.description }}') RETURNING id, name, table_name, description, created_at; SELECT tr_create_doc_table('{{ $json.tableName }}')",
+        "options": {}
+      },
+      "id": "sql-create-cat",
+      "name": "SQL: create_category",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1540, 800],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nreturn [{ json: { success: true, result: row } }];"
+      },
+      "id": "fmt-create-cat",
+      "name": "Format: create_category",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 800]
+    },
+
+    /* ── get_user_permissions ── */
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.category_id, c.name AS category_name, c.table_name, p.can_upload FROM tr_user_permissions p JOIN tr_categories c ON c.id = p.category_id WHERE p.user_id = '{{ $('액션 파싱').item.json.data.user_id }}'::uuid",
+        "options": {}
+      },
+      "id": "sql-get-perms",
+      "name": "SQL: get_user_permissions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1320, 940],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nreturn [{ json: { success: true, result: rows } }];"
+      },
+      "id": "fmt-get-perms",
+      "name": "Format: get_perms",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 940]
+    },
+
+    /* ── grant/revoke permission & audit_logs (Code 노드로 처리) ── */
+    {
+      "parameters": {
+        "jsCode": "const d = $('액션 파싱').item.json;\nconst action = d.action;\nlet query = '';\n\nif (action === 'grant_permission') {\n  const { user_id, category_id, can_upload } = d.data;\n  query = `INSERT INTO tr_user_permissions (user_id, category_id, can_upload) VALUES ('${user_id}', '${category_id}', ${can_upload || false}) ON CONFLICT (user_id, category_id) DO UPDATE SET can_upload = ${can_upload || false}, granted_at = now()`;\n} else if (action === 'revoke_permission') {\n  const { user_id, category_id } = d.data;\n  query = `DELETE FROM tr_user_permissions WHERE user_id = '${user_id}' AND category_id = '${category_id}'`;\n} else if (action === 'get_audit_logs') {\n  const limit = d.data.limit || 20;\n  query = `SELECT l.created_at, u.name AS user_name, l.user_id, l.action, l.query_text, l.session_id FROM tr_audit_logs l LEFT JOIN tr_users u ON u.id = l.user_id WHERE l.company_id = '${d.companyId}' ORDER BY l.created_at DESC LIMIT ${limit}`;\n}\n\nreturn [{ json: { query, action } }];"
+      },
+      "id": "build-perm-query",
+      "name": "권한/로그 쿼리 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 1080]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}",
+        "options": {}
+      },
+      "id": "sql-perm-action",
+      "name": "SQL: 권한/로그 실행",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1540, 1080],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst action = $('권한/로그 쿼리 생성').item.json.action;\nif (action === 'get_audit_logs') return [{ json: { success: true, result: rows } }];\nreturn [{ json: { success: true, result: rows } }];"
+      },
+      "id": "fmt-perm-action",
+      "name": "Format: 권한/로그",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 1080]
+    },
+
+    /* ── Merge All Results ── */
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "input1"
+      },
+      "id": "merge-results",
+      "name": "결과 합치기",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2000, 600]
+    },
+
+    /* ── Final Response ── */
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "respond-admin",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2220, 600]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "인증 확인", "type": "main", "index": 0 }]]
+    },
+    "인증 확인": {
+      "main": [[{ "node": "인증 OK?", "type": "main", "index": 0 }]]
+    },
+    "인증 OK?": {
+      "main": [
+        [{ "node": "액션 파싱", "type": "main", "index": 0 }],
+        [{ "node": "401 Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "액션 파싱": {
+      "main": [[
+        { "node": "list_companies?", "type": "main", "index": 0 },
+        { "node": "create_company?", "type": "main", "index": 0 },
+        { "node": "list_users?", "type": "main", "index": 0 },
+        { "node": "create_user?", "type": "main", "index": 0 },
+        { "node": "add_tokens?", "type": "main", "index": 0 },
+        { "node": "create_category?", "type": "main", "index": 0 },
+        { "node": "get_permissions?", "type": "main", "index": 0 },
+        { "node": "권한/로그 쿼리 생성", "type": "main", "index": 0 }
+      ]]
+    },
+    "list_companies?": {
+      "main": [[{ "node": "SQL: list_companies", "type": "main", "index": 0 }], []]
+    },
+    "SQL: list_companies": {
+      "main": [[{ "node": "Format: list_companies", "type": "main", "index": 0 }]]
+    },
+    "Format: list_companies": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "create_company?": {
+      "main": [[{ "node": "Validate: create_company", "type": "main", "index": 0 }], []]
+    },
+    "Validate: create_company": {
+      "main": [[{ "node": "SQL: create_company", "type": "main", "index": 0 }]]
+    },
+    "SQL: create_company": {
+      "main": [[{ "node": "Format: create_company", "type": "main", "index": 0 }]]
+    },
+    "Format: create_company": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "list_users?": {
+      "main": [[{ "node": "Prep: list_users", "type": "main", "index": 0 }], []]
+    },
+    "Prep: list_users": {
+      "main": [[{ "node": "SQL: list_users", "type": "main", "index": 0 }]]
+    },
+    "SQL: list_users": {
+      "main": [[{ "node": "Format: list_users", "type": "main", "index": 0 }]]
+    },
+    "Format: list_users": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "create_user?": {
+      "main": [[{ "node": "Prep: create_user", "type": "main", "index": 0 }], []]
+    },
+    "Prep: create_user": {
+      "main": [[{ "node": "SQL: create_user", "type": "main", "index": 0 }]]
+    },
+    "SQL: create_user": {
+      "main": [[{ "node": "Format: create_user", "type": "main", "index": 0 }]]
+    },
+    "Format: create_user": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "add_tokens?": {
+      "main": [[{ "node": "SQL: add_tokens", "type": "main", "index": 0 }], []]
+    },
+    "SQL: add_tokens": {
+      "main": [[{ "node": "Format: add_tokens", "type": "main", "index": 0 }]]
+    },
+    "Format: add_tokens": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "create_category?": {
+      "main": [[{ "node": "Prep: create_category", "type": "main", "index": 0 }], []]
+    },
+    "Prep: create_category": {
+      "main": [[{ "node": "SQL: create_category", "type": "main", "index": 0 }]]
+    },
+    "SQL: create_category": {
+      "main": [[{ "node": "Format: create_category", "type": "main", "index": 0 }]]
+    },
+    "Format: create_category": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "get_permissions?": {
+      "main": [[{ "node": "SQL: get_user_permissions", "type": "main", "index": 0 }], []]
+    },
+    "SQL: get_user_permissions": {
+      "main": [[{ "node": "Format: get_perms", "type": "main", "index": 0 }]]
+    },
+    "Format: get_perms": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "권한/로그 쿼리 생성": {
+      "main": [[{ "node": "SQL: 권한/로그 실행", "type": "main", "index": 0 }]]
+    },
+    "SQL: 권한/로그 실행": {
+      "main": [[{ "node": "Format: 권한/로그", "type": "main", "index": 0 }]]
+    },
+    "Format: 권한/로그": {
+      "main": [[{ "node": "결과 합치기", "type": "main", "index": 0 }]]
+    },
+    "결과 합치기": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "TrustRAG Admin API. action 필드로 분기: list_companies, create_company, list_users, create_user, add_tokens, create_category, get_user_permissions, grant_permission, revoke_permission, get_audit_logs"
+  }
+}

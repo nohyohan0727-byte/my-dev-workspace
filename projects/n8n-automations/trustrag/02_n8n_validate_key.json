@@ -1,0 +1,68 @@
+{
+  "name": "TrustRAG-1-Validate-Key",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trustrag/validate-key",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "trustrag-validate-key"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tr_validate_key('{{ $json.body.api_key }}') AS result",
+        "options": {}
+      },
+      "id": "supabase-validate",
+      "name": "Validate Key (Supabase RPC)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 300],
+      "credentials": {
+        "postgres": {
+          "name": "Supabase (Postgres)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.result }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-node",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Validate Key (Supabase RPC)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Key (Supabase RPC)": {
+      "main": [
+        [{ "node": "Respond", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "TrustRAG API 키 검증. Supabase tr_validate_key() RPC 호출하여 사용자 정보 + 카테고리 권한 반환."
+  }
+}

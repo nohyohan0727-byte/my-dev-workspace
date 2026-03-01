@@ -23,6 +23,38 @@
 
 ---
 
+### [2026-03-01] TrustRAG 다중 테넌트 시스템 개발 시작 🔄 진행중
+
+| 항목 | 내용 |
+|------|------|
+| **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
+| **상태** | ✅ 완료 (n8n import 및 Supabase SQL 실행 필요) |
+| **상세 로그** | [work-logs/2026-03-01-trustrag-multi-tenant.md](work-logs/2026-03-01-trustrag-multi-tenant.md) |
+
+**배경:** Claude 맥스 결제 중단으로 세션 끊김 → 재개. TrustRAG 프론트엔드(3파일)는 완성된 상태에서 백엔드 구현 완료.
+
+**완성된 프론트엔드 (`office-ai/trustrag/`):**
+- `chat.html` - 채팅 UI (API 키 인증, 카테고리 칩 선택, 소스 태그 표시)
+- `upload.html` - 파일 업로드 UI (드래그앤드롭, 멀티파일, 진행률)
+- `admin.html` - 어드민 패널 (회사/회원/카테고리/권한/감사로그, 4단계 역할)
+
+**필요한 n8n 엔드포인트 (모두 `/webhook/trustrag/` prefix):**
+| 엔드포인트 | 설명 | 상태 |
+|-----------|------|------|
+| `POST /trustrag/validate-key` | API 키 검증, 권한·카테고리 반환 | ✅ JSON 작성 완료 |
+| `POST /trustrag/chat` | RAG 채팅, 소스 반환, 토큰 차감 | ✅ JSON 작성 완료 |
+| `POST /trustrag/upload` | 파일 업로드 → Supabase 벡터 저장 | ✅ JSON 작성 완료 |
+| `POST /trustrag/admin` | 관리 액션 (10개) | ✅ JSON 작성 완료 |
+
+**필요한 Supabase 신규 테이블 (다중 테넌트):**
+- `tr_companies`, `tr_users`, `tr_categories`, `tr_user_permissions`, `tr_audit_logs`
+- 카테고리별 문서 테이블: `tr_documents_{company_slug}_{cat_slug}`
+
+**admin action 목록:**
+`list_users`, `create_user`, `add_tokens`, `list_companies`, `create_company`, `create_category`, `get_user_permissions`, `grant_permission`, `revoke_permission`, `get_audit_logs`
+
+---
+
 ### [2026-02-28] RAG 채팅 소스 카드 기능 구현 + 워크플로우 범용화 + 버그 전수 수정
 
 | 항목 | 내용 |

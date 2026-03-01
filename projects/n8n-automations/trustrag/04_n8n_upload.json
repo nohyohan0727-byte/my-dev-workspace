@@ -1,0 +1,252 @@
+{
+  "name": "TrustRAG-3-Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trustrag/upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-upload",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "webhookId": "trustrag-upload"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tr_validate_key('{{ $json.body.api_key }}') AS result",
+        "options": {}
+      },
+      "id": "auth-check",
+      "name": "인증 확인",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [420, 400],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = $('인증 확인').item.json.result;\nconst body = $('Webhook').item.json.body;\n\nif (!auth.success) {\n  return [{ json: { success: false, message: auth.message || '인증 실패' } }];\n}\n\n// 카테고리 업로드 권한 확인\nconst cats = auth.categories || [];\nconst targetCat = cats.find(c => c.table_name === body.category || c.name === body.category);\n\nif (!targetCat) {\n  return [{ json: { success: false, message: '접근 불가한 카테고리입니다' } }];\n}\n\nif (!targetCat.can_upload && !['super_admin','company_admin'].includes(auth.role)) {\n  return [{ json: { success: false, message: '업로드 권한이 없습니다' } }];\n}\n\nreturn [{ json: {\n  authorized: true,\n  userId: auth.id,\n  tableName: targetCat.table_name,\n  filename: body.filename,\n  filedata: body.filedata,\n  filesize: body.filesize,\n  mimetype: body.mimetype || 'application/octet-stream'\n} }];"
+      },
+      "id": "auth-and-validate",
+      "name": "인증 & 권한 검증",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.authorized }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "is-authorized",
+      "name": "권한 OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [860, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseCode": 403 }
+      },
+      "id": "return-403",
+      "name": "403 Forbidden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [860, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Base64 → Binary 변환\nconst item = $input.first().json;\nconst binary = Buffer.from(item.filedata, 'base64');\nreturn [{\n  json: {\n    tableName: item.tableName,\n    filename: item.filename,\n    userId: item.userId,\n    mimetype: item.mimetype\n  },\n  binary: {\n    data: {\n      data: binary,\n      mimeType: item.mimetype,\n      fileName: item.filename\n    }\n  }\n}];"
+      },
+      "id": "base64-to-binary",
+      "name": "Base64 → Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "driveId": { "__rl": true, "mode": "list", "value": "My Drive" },
+        "folderId": { "__rl": true, "mode": "list", "value": "root" },
+        "name": "={{ $json.filename }}",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "upload-to-drive",
+      "name": "Upload to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1300, 300],
+      "credentials": { "googleDriveOAuth2Api": { "name": "Google Drive" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 파일 메타데이터 저장\nconst driveItem = $input.first();\nconst prevJson = $('Base64 → Binary').item.json;\nreturn [{ json: {\n  tableName: prevJson.tableName,\n  filename: prevJson.filename,\n  userId: prevJson.userId,\n  driveFileId: driveItem.json.id,\n  driveUrl: `https://drive.google.com/file/d/${driveItem.json.id}/view`\n} }];"
+      },
+      "id": "save-drive-meta",
+      "name": "Drive URL 저장",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.OPENAI_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4.1-mini"
+            },
+            {
+              "name": "messages",
+              "value": "=[{ \"role\": \"user\", \"content\": \"다음 파일의 내용을 요약하고 핵심 정보를 추출해서 청크 단위로 분리해줘. 파일명: {{ $json.filename }}\\n\\n각 청크는 최대 800자 이하로 만들고, JSON 배열 형식으로 반환해줘: [{\\\"chunk\\\": \\\"내용\\\"}]\" }]"
+            }
+          ]
+        }
+      },
+      "id": "extract-text",
+      "name": "텍스트 추출 (GPT)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// GPT 응답에서 청크 파싱\nconst content = $input.first().json.choices[0].message.content;\nconst meta = $('Drive URL 저장').item.json;\n\nlet chunks = [];\ntry {\n  // JSON 배열 파싱 시도\n  const match = content.match(/\\[\\s*\\{[\\s\\S]*\\}\\s*\\]/);\n  if (match) {\n    const parsed = JSON.parse(match[0]);\n    chunks = parsed.map(c => c.chunk || c.content || c.text || String(c));\n  }\n} catch (e) {\n  // 파싱 실패시 전체를 하나의 청크로\n  chunks = [content];\n}\n\nif (chunks.length === 0) chunks = [content];\n\n// 각 청크를 임베딩 요청 형태로 변환\nreturn chunks.map((chunk, i) => ({\n  json: {\n    chunk,\n    chunkIndex: i,\n    totalChunks: chunks.length,\n    tableName: meta.tableName,\n    filename: meta.filename,\n    driveFileId: meta.driveFileId,\n    driveUrl: meta.driveUrl,\n    userId: meta.userId\n  }\n}));"
+      },
+      "id": "parse-chunks",
+      "name": "청크 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1960, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.OPENAI_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"text-embedding-3-small\",\n  \"input\": \"{{ $json.chunk }}\"\n}"
+      },
+      "id": "get-embedding",
+      "name": "임베딩 생성 (OpenAI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO {{ $('청크 파싱').item.json.tableName }} (content, metadata, embedding) VALUES ('{{ $('청크 파싱').item.json.chunk.replace(/'/g, \"''\") }}', '{\"source_filename\": \"{{ $('청크 파싱').item.json.filename }}\", \"source_file_id\": \"{{ $('청크 파싱').item.json.driveFileId }}\", \"source_drive_url\": \"{{ $('청크 파싱').item.json.driveUrl }}\", \"chunk_index\": {{ $('청크 파싱').item.json.chunkIndex }}}', '{{ $json.data[0].embedding }}'::vector)",
+        "options": {}
+      },
+      "id": "insert-vector",
+      "name": "Supabase 벡터 저장",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2400, 300],
+      "credentials": { "postgres": { "name": "Supabase (Postgres)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 모든 청크 완료 후 요약 반환\nconst items = $input.all();\nreturn [{ json: {\n  success: true,\n  chunks: items.length,\n  filename: $('청크 파싱').first().json.filename,\n  message: `${items.length}개 청크가 저장되었습니다`\n} }];"
+      },
+      "id": "summary",
+      "name": "결과 요약",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2620, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "respond-upload",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2840, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "인증 확인", "type": "main", "index": 0 }]]
+    },
+    "인증 확인": {
+      "main": [[{ "node": "인증 & 권한 검증", "type": "main", "index": 0 }]]
+    },
+    "인증 & 권한 검증": {
+      "main": [[{ "node": "권한 OK?", "type": "main", "index": 0 }]]
+    },
+    "권한 OK?": {
+      "main": [
+        [{ "node": "Base64 → Binary", "type": "main", "index": 0 }],
+        [{ "node": "403 Forbidden", "type": "main", "index": 0 }]
+      ]
+    },
+    "Base64 → Binary": {
+      "main": [[{ "node": "Upload to Google Drive", "type": "main", "index": 0 }]]
+    },
+    "Upload to Google Drive": {
+      "main": [[{ "node": "Drive URL 저장", "type": "main", "index": 0 }]]
+    },
+    "Drive URL 저장": {
+      "main": [[{ "node": "텍스트 추출 (GPT)", "type": "main", "index": 0 }]]
+    },
+    "텍스트 추출 (GPT)": {
+      "main": [[{ "node": "청크 파싱", "type": "main", "index": 0 }]]
+    },
+    "청크 파싱": {
+      "main": [[{ "node": "임베딩 생성 (OpenAI)", "type": "main", "index": 0 }]]
+    },
+    "임베딩 생성 (OpenAI)": {
+      "main": [[{ "node": "Supabase 벡터 저장", "type": "main", "index": 0 }]]
+    },
+    "Supabase 벡터 저장": {
+      "main": [[{ "node": "결과 요약", "type": "main", "index": 0 }]]
+    },
+    "결과 요약": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "TrustRAG 파일 업로드. Base64 → Google Drive → GPT 텍스트 추출 → OpenAI 임베딩 → Supabase 벡터 저장."
+  }
+}

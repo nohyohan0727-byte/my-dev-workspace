@@ -1,0 +1,15 @@
+{
+  "id": "1157",
+  "finished": true,
+  "mode": "webhook",
+  "retryOf": null,
+  "retrySuccessId": null,
+  "status": "success",
+  "createdAt": "2026-03-01T11:49:49.156Z",
+  "startedAt": "2026-03-01T11:49:49.216Z",
+  "stoppedAt": "2026-03-01T11:49:56.508Z",
+  "deletedAt": null,
+  "workflowId": "Oo9ThEBXSg3QUv4L",
+  "waitTill": null,
+  "storedAt": "db"
+}

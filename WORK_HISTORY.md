@@ -23,40 +23,45 @@
 
 ---
 
-### [2026-03-01] TrustRAG 다중 테넌트 시스템 개발 시작 🔄 진행중
+### [2026-03-01] TrustRAG 시스템 완전 가동 완료 ✅
 
 | 항목 | 내용 |
 |------|------|
 | **작업자** | nohyohan0727-byte + Claude (Sonnet 4.6) |
-| **상태** | ✅ 완료 (n8n import 및 Supabase SQL 실행 필요) |
+| **상태** | ✅ 전체 E2E 테스트 완료, 운영 가능 상태 |
 | **상세 로그** | [work-logs/2026-03-01-trustrag-multi-tenant.md](work-logs/2026-03-01-trustrag-multi-tenant.md) |
 
-**배경:** Claude 맥스 결제 중단으로 세션 끊김 → 재개. TrustRAG 프론트엔드(3파일)는 완성된 상태에서 백엔드 구현 완료.
-
-**완성된 프론트엔드 (`office-ai/trustrag/`):**
-- `chat.html` - 채팅 UI (API 키 인증, 카테고리 칩 선택, 소스 태그 표시)
-- `upload.html` - 파일 업로드 UI (드래그앤드롭, 멀티파일, 진행률)
-- `admin.html` - 어드민 패널 (회사/회원/카테고리/권한/감사로그, 4단계 역할)
-
-**필요한 n8n 엔드포인트 (모두 `/webhook/trustrag/` prefix):**
-| 엔드포인트 | 설명 | 상태 |
+**n8n 엔드포인트 - 모두 Live 운영중:**
+| 엔드포인트 | 상태 | 비고 |
 |-----------|------|------|
-| `POST /trustrag/validate-key` | API 키 검증, 권한·카테고리 반환 | ✅ JSON 작성 완료 |
-| `POST /trustrag/chat` | RAG 채팅, 소스 반환, 토큰 차감 | ✅ JSON 작성 완료 |
-| `POST /trustrag/upload` | 파일 업로드 → Supabase 벡터 저장 | ✅ JSON 작성 완료 |
-| `POST /trustrag/admin` | 관리 액션 (10개) | ✅ JSON 작성 완료 |
+| `POST /webhook/trustrag/validate-key` | ✅ 정상 | 실제 users 테이블 사용 |
+| `POST /webhook/trustrag/chat` | ✅ RAG 정상 | 내부문서 기반 답변 확인 |
+| `POST /webhook/trustrag/upload` | ✅ 정상 | category=table_name 전송 |
+| `POST /webhook/trustrag/admin` | ✅ 정상 | list_users 다중행 버그 수정 |
 
-**Supabase DB 실행 완료 (ryzkcdvywxblsbyujtfv):**
-- `tr_companies`, `tr_users`, `tr_categories`, `tr_user_permissions`, `tr_audit_logs` ✅ 생성
-- RPC: `tr_validate_key()`, `tr_deduct_token()`, `tr_create_doc_table()` ✅ 생성
-- 초기 데이터: JK Networks 회사 + 슈퍼어드민 계정 생성 (API 키 변경 필요)
-- 기존 테이블 카테고리 등록: ISO인증(tr_jknetworks_iso_cert), KS인증(tr_jknetworks_ks_cert)
-- validate-key 동작 확인: success: true, categories 2개 반환 ✅
+**Supabase 현황 (ryzkcdvywxblsbyujtfv):**
+- 실제 운영 테이블: `users`, `categories`, `companies`, `audit_logs`, `user_category_access`, `files`
+- 벡터 테이블: `tr_jknetworks_ks_cert`, `tr_jknetworks_iso_cert` (company_id 컬럼 추가)
+- RPC: `get_user_permissions(p_api_key)`, `tr_validate_key(p_api_key)`, `match_documents_<table>()`, `create_category_table()`, `write_audit_log()`
+- 슈퍼어드민: 노진광 (api_key: trust_super_25a70cd8-..., tokens: ~99992)
 
-**다음 단계:**
-1. 슈퍼어드민 API 키 변경: `UPDATE tr_users SET api_key='trust_실제키' WHERE role='super_admin'`
-2. n8n 워크플로우 4개 import (02~05 JSON 파일)
-3. `/trustrag/admin.html` 접속 → 카테고리/회원 관리
+**수정된 n8n 코드 (API 업데이트):**
+- TrustRAG_Chat / Resolve Categories: table_name 기준 필터링 (한국어 문자열 비교 이슈 해결)
+- TrustRAG_Chat / Merge Results: category 표시 메타데이터 매칭 수정
+- TrustRAG_Admin / Return List Users|Companies|Logs: 다중 행 반환 수정
+
+**수정된 프론트엔드:**
+- `chat.html` checkbox `value`: name → table_name (카테고리 필터 정상 동작)
+
+**검증된 시나리오:**
+- validate-key: ✅ 슈퍼어드민 → 5개 카테고리 반환
+- upload: ✅ KS인증 문서 업로드 → 벡터 DB 저장
+- chat: ✅ "KS 인증 갱신 심사 신청은 언제?" → 내부문서 기반 답변 생성
+- admin list_users: ✅ 전체 사용자 목록 반환
+
+**남은 작업:**
+- 업로드 파일명 한국어 깨짐 (bash 인코딩 이슈, 프론트엔드 업로드는 정상)
+- `사내표준` 카테고리 table_name 비어있음 (직접 수정 필요)
 
 **admin action 목록:**
 `list_users`, `create_user`, `add_tokens`, `list_companies`, `create_company`, `create_category`, `get_user_permissions`, `grant_permission`, `revoke_permission`, `get_audit_logs`

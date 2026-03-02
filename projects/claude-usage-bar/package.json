@@ -1,0 +1,47 @@
+{
+  "name": "claude-usage-bar",
+  "displayName": "Claude Usage Bar",
+  "description": "Anthropic Claude API 사용량 및 비용을 VS Code 하단 상태표시줄에 표시",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeUsage.refresh",
+        "title": "Claude Usage: 사용량 새로고침"
+      },
+      {
+        "command": "claudeUsage.setAdminKey",
+        "title": "Claude Usage: Admin API Key 설정"
+      },
+      {
+        "command": "claudeUsage.showPanel",
+        "title": "Claude Usage: 상세 패널 열기"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Usage Bar",
+      "properties": {
+        "claudeUsage.monthlyBudgetUSD": {
+          "type": "number",
+          "default": 0,
+          "description": "월 예산 (USD). 0 이면 예산 진행률 표시 안 함. 예: 10"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package --no-dependencies",
+    "install-ext": "code --install-extension claude-usage-bar-1.0.0.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

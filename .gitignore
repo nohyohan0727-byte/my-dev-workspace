@@ -25,3 +25,7 @@ dist/
 build/
 *.exe
 *.dll
+
+# n8n workflow exports (contain API keys)
+trustrag_*_workflow*.json
+trustrag_admin_current.json

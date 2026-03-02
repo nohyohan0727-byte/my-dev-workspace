@@ -9,10 +9,10 @@
 
 | 프로젝트명 | 폴더 | 상태 |
 |---|---|---|
-| 가라온브로스 — 보드게임 추천 앱 | `garaon-bros/` | 🚧 진행중 |
+| 가라온브로스 — 보드게임 추천 앱 | `garaon-bros/` | ✅ 1차 완성 |
 | 가라온 브로즈: 픽셀 기지 | `garaon-bros/pixel-base.html` | ✅ 개발 완료 |
 
-> 세부 히스토리는 각 프로젝트 폴더의 `WORK_HISTORY.md` 참고
+> 세부 히스토리는 이 파일(`PERSONAL_PROJECTS.md`)에 기록 (WORK_HISTORY.md는 회사용)
 
 ---
 
@@ -22,32 +22,33 @@
 |------|------|
 | **성격** | 가족용 개인 프로젝트 |
 | **목적** | 보드게임방에서 인원·상황에 맞는 게임 추천 |
-| **상태** | 🚧 진행중 |
+| **상태** | ✅ 1차 완성 (로컬 동작) |
 | **경로** | `C:\dev\office-ai\garaon-bros\` |
-| **히스토리** | `C:\dev\office-ai\garaon-bros\WORK_HISTORY.md` |
 | **Supabase** | `mkmxhmoocqnkltjxdfbm` |
-| **배포** | 로컬 실행 or GitHub Pages |
+| **배포** | office-ai.app/garaon-bros/ (push 후 자동) |
 
-**파일 구조 (계획):**
+**실제 파일 구조:**
 ```
 garaon-bros/
-├── index.html          ← 메인 (추천 선택 화면)      ← 이 앱 담당
-├── recommend.html      ← 추천 결과 화면
-├── admin.html          ← 게임 목록 관리
-├── style.css
+├── index.html        ← 메인 허브 (비밀번호 → 추천/픽셀기지 선택)
+├── recommend.html    ← 보드게임/맨손 게임 추천 앱 ✅
+├── admin.html        ← 게임 목록 관리
+├── pixel-base.html   ← 픽셀 기지 앱
 ├── data/
-│   └── games-data.js   ← 보드게임 + 맨손게임 데이터
+│   └── games-data.js ← 보드게임 20종 + 맨손게임 10종 로컬 데이터
 ├── js/
-│   ├── app.js          ← 추천 알고리즘
-│   └── supabase.js     ← Supabase 연동
-├── db/
-│   └── schema.sql      ← board_games / hand_games 테이블
-└── pixel-base.html     ← 픽셀 기지 앱 (아래 프로젝트)
+│   ├── app.js        ← 추천 알고리즘 + Supabase 연동 함수
+│   └── config.js     ← Supabase 연결 설정
+└── db/
+    └── schema.sql    ← board_games / hand_games 테이블 (선택 실행)
 ```
 
-**DB 테이블:**
-- `board_games` — 보드게임 목록 (인원, 난이도, 카테고리 등)
-- `hand_games`  — 맨손 게임 목록
+**추천 필터:**
+- 보드게임: 인원수 / 게임종류(전략·카드·파티·협력·추리 등) / 난이도 / 플레이 시간
+- 맨손게임: 인원수 / 분위기(시끌벅적·조용·신체·언어·추리·창의) / 플레이 시간
+
+**작업 이력:**
+- 2026-03-01: recommend.html 추천 플로우 완성, 게임 데이터 30종, 추천 알고리즘 구현
 
 ---
 
@@ -94,8 +95,6 @@ git push
 
 ## 작업 규칙
 
-- 각 프로젝트 세부 히스토리는 **프로젝트 폴더 내 WORK_HISTORY.md** 에 기록
-- 이 파일(`PERSONAL_PROJECTS.md`)은 **프로젝트 목록 + 개요 + 파일 구조** 만 관리
-- 두 프로젝트 모두 `garaon-bros/` 폴더를 공유하므로 **파일명 충돌 주의**:
-  - `index.html` → 추천 앱 담당
-  - `pixel-base.html` → 픽셀 기지 담당
+- 개인 프로젝트 히스토리는 **이 파일(`PERSONAL_PROJECTS.md`)에만** 기록
+- 회사 업무용 `WORK_HISTORY.md`에는 절대 기록하지 않음
+- 파일명 충돌 주의: `index.html` → 메인 허브, `recommend.html` → 추천, `pixel-base.html` → 픽셀기지
